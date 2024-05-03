@@ -1,3 +1,4 @@
+import character_detail.CharacterDetail
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -7,21 +8,24 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 fun main(args: Array<String>) {
-    //saveHsrCharacterList()
+    /*HsrCharacterListUrl.parserHonkaiStarRailPlayableCharacters()
+        .let { saveHsrCharacterList(it) }*/
     loadHsrCharacterList()
-        ?.firstOrNull()
-        ?.let { HstCharacterData.parseCharacter(it) }
+        ?.let { listOf(it.first()) }
+        ?.map { HstCharacterData.parseCharacter(it) }
+        ?.let { saveHasCharacterDetailList(it) }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
 fun saveHsrCharacterList(
+    data: List<CharacterListItem>,
     fileName: String = "HsrCharacterList.json",
 ) {
-    val listPlayableCharacter = HsrCharacterListUrl.parserHonkaiStarRailPlayableCharacters()
+
     val file = File(fileName)
     if (file.exists())
         file.delete()
-    FileOutputStream(file).use { Json.encodeToStream(listPlayableCharacter, it) }
+    FileOutputStream(file).use { Json.encodeToStream(data, it) }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -32,4 +36,15 @@ private fun loadHsrCharacterList(
         .takeIf { it.exists() }
         ?.let { FileInputStream(it) }
         ?.use { Json.decodeFromStream(it) }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+fun saveHasCharacterDetailList(
+    hsrCharacterDetailList: List<CharacterDetail>,
+    fileName: String = "HsrCharacterDetailList.json",
+) {
+    val file = File(fileName)
+    if (file.exists())
+        file.delete()
+    FileOutputStream(file).use { Json.encodeToStream(hsrCharacterDetailList, it) }
 }

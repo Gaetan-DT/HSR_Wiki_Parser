@@ -1,3 +1,5 @@
+package character_detail
+
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,8 +13,8 @@ data class CharacterDetail(
     val vaChi: String?,
     val vaJap: String?,
     val vaKor: String?,
-    val voiceOverListEng: List<Pair<String, String>>,
-    val voiceOverListChi: List<Pair<String, String>>,
-    val voiceOverListJap: List<Pair<String, String>>,
-    val voiceOverListKor: List<Pair<String, String>>,
+    val voiceOverListEng: List<CharacterVoiceLineData>,
+    val voiceOverListChi: List<CharacterVoiceLineData>,
+    val voiceOverListJap: List<CharacterVoiceLineData>,
+    val voiceOverListKor: List<CharacterVoiceLineData>,
 )

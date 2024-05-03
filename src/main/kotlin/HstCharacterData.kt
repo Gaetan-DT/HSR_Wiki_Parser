@@ -3,6 +3,7 @@ import character_detail.CharacterVoiceLineData
 import it.skrape.core.htmlDocument
 import it.skrape.fetcher.HttpFetcher
 import it.skrape.fetcher.extractBlocking
+import it.skrape.fetcher.response
 import it.skrape.fetcher.skrape
 import it.skrape.selects.Doc
 import it.skrape.selects.DocElement
@@ -10,6 +11,7 @@ import it.skrape.selects.html5.a
 import it.skrape.selects.html5.b
 import it.skrape.selects.html5.div
 import it.skrape.selects.html5.h3
+import it.skrape.selects.text
 
 object HstCharacterData {
 
@@ -20,7 +22,7 @@ object HstCharacterData {
 
     fun parseCharacter(characterListItem: CharacterListItem): CharacterDetail {
         val wikiUrl = "${Const.base_url}${characterListItem.wikiUrl}"
-        println("Paring url $wikiUrl")
+        println("Paring ${characterListItem.name}, url $wikiUrl")
         val (
             splashArtUrl,
             charNameList,
@@ -62,14 +64,18 @@ object HstCharacterData {
 
     private fun Doc.extractCharNameList(): NameList {
         val englishLanguage = "English"
-        val chinesseLanguage = "Chinese (Simplified)"
+        val chineseLanguage = listOf("Chinese (Simplified)", "Chinese (Simplified)", "Chinese")
         val japaneseLanguage = "Japanese"
         val koreanLanguage = "Korean"
 
+        val findLanguageHeaderTablePredicate: (DocElement) -> Boolean = {
+            it.findAll { this.text }.contains("Language", true)
+        }
+
         val listLanguage = findAll("table")
-            .getOrNull(1)
-            ?.findAll("tbody tr:not(:has(th))")
-            ?.map {
+            .first(findLanguageHeaderTablePredicate)
+            .findAll("tbody tr:not(:has(th))")
+            .map {
                 val td = it.findAll("td")
                 val languageName = td.getOrNull(0)?.b { findFirst { text } }
                 val languageValue = td.getOrNull(1)?.findFirst { text }
@@ -77,10 +83,12 @@ object HstCharacterData {
                 languageName to languageValue
             }
         return NameList(
-            eng = listLanguage?.firstOrNull { it.first == englishLanguage }?.second,
-            chi = listLanguage?.firstOrNull { it.first == chinesseLanguage }?.second,
-            jap = listLanguage?.firstOrNull { it.first == japaneseLanguage }?.second,
-            kor = listLanguage?.firstOrNull { it.first == koreanLanguage }?.second,
+            eng = listLanguage.firstOrNull { it.first == englishLanguage }?.second,
+            chi = listLanguage.firstOrNull {(languageName, _) ->
+                chineseLanguage.any { languageName?.contains(it, true) == true }
+            }?.second,
+            jap = listLanguage.firstOrNull { it.first == japaneseLanguage }?.second,
+            kor = listLanguage.firstOrNull { it.first == koreanLanguage }?.second,
         )
     }
 
@@ -91,10 +99,9 @@ object HstCharacterData {
         val koreanLanguage = "Korean"
         val listLanguage = findAll("section.pi-item.pi-panel")
             .first()
-            .findAll("div.wds-tab__content")[1]
+            .findAll("div.wds-tab__content").last()
             .findAll(".pi-item.pi-data.pi-item-spacing.pi-border-color")
             .map { docElement ->
-                println()
                 val languageName = docElement.h3 {
                     findFirst {
                         text
@@ -121,11 +128,18 @@ object HstCharacterData {
         val result = skrape(HttpFetcher) {
             request { this.url = pageUrl }
             extractBlocking {
-                htmlDocument {
-                    //this.findAll("table tbody tr")[2].extractVoicePackUrlFromTableTr()
-                    this.findAll("table.wikitable tbody tr").mapNotNull {
-                        it.extractVoicePackUrlFromTableTr(filterSpanLanguage)
+                val statusCode: Int = status { code }
+                when (statusCode) {
+                    200 -> {
+                        htmlDocument {
+                            //this.findAll("table tbody tr")[2].extractVoicePackUrlFromTableTr()
+                            this.findAll("table.wikitable tbody tr").mapNotNull {
+                                it.extractVoicePackUrlFromTableTr(filterSpanLanguage)
+                            }
+                        }
                     }
+                    404 ->  emptyList()
+                    else -> throw  Exception("Unable to manage status code $statusCode")
                 }
             }
         }

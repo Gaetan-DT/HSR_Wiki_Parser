@@ -25,18 +25,15 @@ object HsrCharacterListUrl {
         //println("this => ${this.html}")
         val tableColumn = findAll(cssSelector = "td")
 
-        var wikiUrl: String? = tableColumn.getOrNull(0)?.a { findAll { eachHref }.firstOrNull() }
-        var iconUrl: String? = tableColumn.getOrNull(0)?.a { img { findFirst { eachSrc }.firstOrNull() } }
-        var name: String? = tableColumn.getOrNull(1)?.a { findFirst { text } }
-        var rarityImageUrl: String? = null
-        var pathName: String? = null
-        var combatType: String? = null
-        var version: String? = null
+        val rarityImageUrl: String? = null
+        val pathName: String? = null
+        val combatType: String? = null
+        val version: String? = null
 
         return CharacterListItem(
-            wikiUrl = wikiUrl,
-            iconUrl = iconUrl,
-            name = name,
+            wikiUrl = tableColumn.getOrNull(0)?.a { findAll { eachHref }.firstOrNull() },
+            iconUrl = tableColumn.getOrNull(0)?.a { img { findFirst { eachSrc }.firstOrNull() } },
+            name = tableColumn.getOrNull(1)?.a { findFirst { text } },
             rarityImageUrl = rarityImageUrl,
             pathName = pathName,
             combatType = combatType,
